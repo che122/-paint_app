@@ -1,33 +1,11 @@
 import React, {useState} from "react";
 import {View, Text, StyleSheet, TouchableOpacity, Image} from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
+import { gUrl } from "./Paint";
 import { useNavigation } from '@react-navigation/core';
 import { MaterialIcons } from '@expo/vector-icons';
 
 const Gallery = () => {
   const navigation = useNavigation();
-  const [image, setImage] = useState(null);
-
-  const pickImage = async () => {
-    const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
-
-    if (permissionResult.granted === false) {
-      alert("You've refused to allow this appp to access your photos!");
-      return;
-    }
-
-    // No permissions request is necessary for launching the image library
-    const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 1,
-      });
-  
-      if (!result.cancelled) {
-        setImage(result.uri);
-      }
-}
 
     return (
         <View style={styles.container}>
@@ -37,7 +15,7 @@ const Gallery = () => {
                 </TouchableOpacity>
             </View>
             <View style={styles.content}>
-                <Image source={{uri: image}} style={{width: 360, height: 492}}/>
+                <Image source={{uri: gUrl}} style={{width: 360, height: 492}}/>
             </View>
             <View style={styles.footer}>
                 <View style={styles.footerbtn}>
