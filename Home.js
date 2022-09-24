@@ -4,6 +4,7 @@ import {View, Text, StyleSheet, TouchableOpacity, Image} from 'react-native';
 //import { MaterialCommunityIcons } from '@expo/vector-icons'; 
 //import { Ionicons } from '@expo/vector-icons';
 import { getAuth } from "firebase/auth";
+import {Calendar, CalendarList, Agenda} from 'react-native-calendars';
 //import { BorderlessButton } from "react-native-gesture-handler";
 
 export default function Home () {
@@ -20,6 +21,7 @@ export default function Home () {
                 <View style={styles.nameView}>
                     <Text style={styles.nameText}>{displayName}님</Text>
                 </View>
+                <Calendar style={styles.calendar} />
             </View>
         </View>
     )
@@ -69,5 +71,13 @@ const styles = StyleSheet.create({
         lineHeight: 18,
         color: "#FFFFFF",
         flexGrow: 0
+    },
+    calendar: {
+        display: "flex",
+        justifyContent: 'center',
+        alignContent: 'center',
+        padding: 0,
+        gap: 16,
+        top: 200
     }
 })
