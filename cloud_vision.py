@@ -1,3 +1,4 @@
+from asyncio.windows_events import NULL
 from http.client import responses
 import io
 from recommend import *
@@ -27,7 +28,6 @@ def detect_faces(path):
     likelihood_name = ('UNKNOWN', 'VERY_UNLIKELY', 'UNLIKELY', 'POSSIBLE',
                        'LIKELY', 'VERY_LIKELY')
     print('Faces:')
-
     
     for face in faces:
         print('anger: {}'.format(likelihood_name[face.anger_likelihood]))
@@ -45,15 +45,10 @@ def detect_faces(path):
             feeling = "surprise"
         else:
             feeling = "neutral"
+    if feeling == "":
+        feeling = "neutral"
 
     return feeling
-    """ 
-        vertices = (['({},{})'.format(vertex.x, vertex.y)
-                    for vertex in face.bounding_poly.vertices])
-
-        print('face bounds: {}'.format(','.join(vertices)))
-    """
-    
 
     if response.error.message:
         raise Exception(
@@ -96,14 +91,10 @@ def detect_labels(path):
 # [END vision_label_detection]
 
 img_src = "ocean.jpg"
+label = detect_labels(img_src)
 feeling = detect_faces(img_src)
-if feeling == "neutral" :
-    label = detect_labels(img_src)
 
-song_json = "C:/Users/elysi/2022-01/졸업/melon_data/song_meta.json"
-train_json = "C:/Users/elysi/2022-01/졸업/melon_data/data.json"
-df = pd.read_json(song_json, typ='frame', encoding="utf-8")
-df.to_csv('song.csv')
 song_csv = "C:/Users/elysi/2022-01/졸업/melon_data/song.csv"
+train_json = "C:/Users/elysi/2022-01/졸업/melon_data/train.json"
 
 ply_title, ply_tag = main(song_csv, train_json, feeling, label)
