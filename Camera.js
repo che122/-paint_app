@@ -1,31 +1,52 @@
-import React, {useState} from "react";
+import React, {useState, useEffect} from "react";
 import {View, Text, StyleSheet, TouchableOpacity, Image} from 'react-native';
-import { cUrl } from "./Paint";
+import * as ImagePicker from 'expo-image-picker';
 import { useNavigation } from '@react-navigation/core';
 import { MaterialIcons } from '@expo/vector-icons';
    
 const Camera = () => {
   const navigation = useNavigation();
+  const [image, setImage] = useState(null);
+
+  useEffect(()=>{
+    openCamera();
+  },[])
+
+  const openCamera = async () => {
+    const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+  
+    if (permissionResult.granted === false) {
+      alert("You've refused to allow this appp to access your camera!");
+      return;
+    }
+  
+    // No permissions request is necessary for launching the image library
+    const result = await ImagePicker.launchCameraAsync();
+  
+      if (!result.cancelled) {
+        setImage(result.uri);
+      }
+  }
 
     return (
         <View style={styles.container}>
             <View style={styles.header}>
-                <TouchableOpacity style={{left: 16, top: 6}} onPress={() => navigation.pop()}>
+                <TouchableOpacity style={{left: 16, top: 6}} onPress={() => navigation.navigate("Tab")}>
                     <MaterialIcons name="home-filled" color="black" size={32}/>
                 </TouchableOpacity>
             </View>
             <View style={styles.content}>
-                <Image source={{uri: cUrl}} style={{width: 360, height: 492}}/>
+                <Image source={{uri: image}} style={{width: 360, height: 492}}/>
             </View>
             <View style={styles.footer}>
                 <View style={styles.footerbtn}>
-                  <TouchableOpacity onPress={() => pickImage()}>
+                  <TouchableOpacity /*onPress={() => pickImage()}*/>
                       <MaterialIcons name="insert-photo" color="white" size={42}/>
                   </TouchableOpacity>
-                  <TouchableOpacity /*onPress={() => openCamera()}*/>
+                  <TouchableOpacity>
                       <Image style={{width: 102, height: 102}} source={require('./assets/img/camera.png')}/>
                   </TouchableOpacity>
-                  <TouchableOpacity /*onPress={() => navigation.navigate("Tab")}*/>
+                  <TouchableOpacity /*onPress={() => openCamera()}*/>
                       <MaterialIcons name="refresh" color="white" size={42}/>
                   </TouchableOpacity>
                 </View>
