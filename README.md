@@ -4,3 +4,5 @@ npm i @react-navigation/native-stack react-native-appearance react-native-gestur
 npm i @react-navigation/stack @react-navigation/bottom-tabs expo-image-picker
 npm i @react-navigation/stack
 expo install firebase
+
+npm install react-native-calendars --save
