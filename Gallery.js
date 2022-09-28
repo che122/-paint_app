@@ -1,8 +1,14 @@
 import React, {useState, useEffect} from "react";
-import {View, Text, StyleSheet, TouchableOpacity, Image} from 'react-native';
+import {View, Text, StyleSheet, TouchableOpacity, Image, Alert, confirmAlert} from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useNavigation } from '@react-navigation/core';
 import { MaterialIcons } from '@expo/vector-icons';
+import { getAuth } from "firebase/auth";
+import {db} from './firebase';
+import { storage } from "./firebase";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { doc, setDoc } from "firebase/firestore"
+import format from "date-fns/format";
 
 const Gallery = () => {
   const navigation = useNavigation();
@@ -33,6 +39,51 @@ const Gallery = () => {
       }
     }
 
+    const imageUpload = async (blob, date) => {
+      const storageRef = ref(storage, 'image/' + date)
+      const snapshot = await uploadBytes(storageRef, blob);
+      const imageUrl = await getDownloadURL(storageRef);
+      blob.close();
+
+      return imageUrl;
+    }
+
+    const addImage = async (content) => {
+      try {
+        await setDoc(doc(db, "image/", new Date() + "D"), content);
+        return true
+      } catch(err) {
+        Alert.alert('이미지에 문제가 있습니다.', err.message)
+        return false
+      }
+    }
+
+    const upload = async () => {
+        console.log('업로드 준비중!');
+        if (!image){
+          Alert.alert('이미지를 등록해주세요');
+          return;
+        }
+        const currentUser = getAuth().currentUser;
+        let date = new Date();
+        let getTime = date.getTime();
+        let data = {
+          image: image,
+          date: format(date, 'yyyy-MM-dd'),
+          time: getTime,
+          uid: currentUser.uid,
+        };
+        const response = await fetch(image);
+        const blob = await response.blob();
+        const imageUrl = await imageUpload(blob, getTime);
+        data.image = imageUrl;
+        console.log(data);
+        let result = addImage(data);
+        if (result) {
+          Alert.alert('사진이 성공적으로 저장되었습니다!');
+        }
+    };
+
     return (
         <View style={styles.container}>
             <View style={styles.header}>
@@ -48,7 +99,7 @@ const Gallery = () => {
                   <TouchableOpacity onPress={() => pickImage()}>
                       <MaterialIcons name="insert-photo" color="white" size={42}/>
                   </TouchableOpacity>
-                  <TouchableOpacity /*onPress={() => navigation.navigate("Tab")}*/>
+                  <TouchableOpacity onPress={() => upload()}>
                       <Image style={{width: 102, height: 102}} source={require('./assets/img/camera.png')}/>
                   </TouchableOpacity>
                   <TouchableOpacity /*onPress={() => navigation.navigate("Tab")}*/>
