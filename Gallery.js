@@ -1,16 +1,75 @@
 import React, {useState, useEffect} from "react";
-import {View, Text, StyleSheet, TouchableOpacity, Image} from 'react-native';
+import {View, Text, StyleSheet, TouchableOpacity, Image, Alert} from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useNavigation } from '@react-navigation/core';
 import { MaterialIcons } from '@expo/vector-icons';
+import { getAuth } from "firebase/auth";
+import {db} from './firebase';
+import { storage } from "./firebase";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { doc, setDoc } from "firebase/firestore"
+import format from "date-fns/format";
+import { discovery } from "./App";
+import { spotify } from "./App";
+import { makeRedirectUri, ResponseType, useAuthRequest } from 'expo-auth-session';
+import { Audio } from 'expo-av';
 
 const Gallery = () => {
   const navigation = useNavigation();
   const [image, setImage] = useState(null);
+  const [isMusic, setIsMusic] = useState(false);
+  const [song, setSong] = useState('');
+  const [artist, setArtist] = useState('');
+  const [albumImage, setAlbumImage] = useState('');
+  const [previewUrl, setPreviewUrl] = useState('');
+  const [token, setToken] = useState('');
+  const searchTag = ['spring', 'love', 'tired', 'happy', 'cloud', 'sunny'];
+  const sound = new Audio.Sound();
+
+  const [request, response, promptAsync] = useAuthRequest(
+    {
+      responseType: ResponseType.Token,
+      clientId: '6c24124e1da04448bf18452649da81fe',
+      scopes: ['user-read-email', 'playlist-modify-public'],
+      // In order to follow the "Authorization Code Flow" to fetch token after authorizationEndpoint
+      // this must be set to false
+      usePKCE: false,
+      redirectUri: makeRedirectUri({
+          useProxy: true
+      }),
+    },
+    discovery
+);
+
+const searchMusic = async () => {
+  spotify.searchTracks(searchTag[1], {limit: 1, offset: 10})
+  .then(
+      function (data) {
+        setSong(data.tracks.items[0].name);
+        setArtist(data.tracks.items[0].artists[0].name);
+        setAlbumImage(data.tracks.items[0].album.images[2].url);
+        setPreviewUrl(data.tracks.items[0].preview_url);
+      },
+      function (err) {
+        console.error(err);
+      }
+  )
+}
 
   useEffect(()=>{
     pickImage();
   },[]);
+
+  useEffect(()=>{
+    if (isMusic){
+      if (response?.type === 'success') {
+        const { access_token } = response.params;
+        setToken(access_token);
+        spotify.setAccessToken(access_token);
+        searchMusic();
+      }
+    }
+  }, [response])
 
   const pickImage = async () => {
     const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
@@ -33,12 +92,112 @@ const Gallery = () => {
       }
     }
 
+    const imageUpload = async (blob, date) => {
+      const storageRef = ref(storage, 'image/' + date)
+      const snapshot = await uploadBytes(storageRef, blob);
+      const imageUrl = await getDownloadURL(storageRef);
+      blob.close();
+
+      return imageUrl;
+    }
+
+    const addImage = async (content) => {
+      try {
+        await setDoc(doc(db, "image/", new Date() + "D"), content);
+        return true
+      } catch(err) {
+        Alert.alert('이미지에 문제가 있습니다.', err.message)
+        return false
+      }
+    }
+
+    const upload = async () => {
+        console.log('업로드 준비중!');
+        if (!image){
+          Alert.alert('이미지를 등록해주세요');
+          return;
+        }
+        const currentUser = getAuth().currentUser;
+        let date = new Date();
+        let getTime = date.getTime();
+        let data = {
+          image: image,
+          date: format(date, 'yyyy-MM-dd'),
+          time: date.getHours() + ':' + date.getMinutes(),
+          uid: currentUser.uid,
+          uname: currentUser.displayName,
+          songName: song,
+          songArtist: artist,
+          songPreview: previewUrl,
+        };
+        const response = await fetch(image);
+        const blob = await response.blob();
+        const imageUrl = await imageUpload(blob, getTime);
+        data.image = imageUrl;
+        console.log(data);
+        let result = addImage(data);
+        if (result) {
+          Alert.alert('사진이 성공적으로 저장되었습니다!');
+          navigation.replace("Tab");
+        }
+    };
+
+    const playSound = async () => {
+      if (!previewUrl) {
+        Alert.alert('재생 불가', '미리듣기가 제공되지 않는 음원입니다.');
+      }
+      else {
+      await sound.loadAsync(
+        {uri: previewUrl},
+        {shouldPlay: true}
+      );
+      console.log('Playing Sound');
+      await sound.playAsync();
+      }
+    }
+
+    const pauseSound = async () => {
+      console.log('Pausing Sound');
+      await sound.pauseAsync();
+      await sound.unloadAsync();
+    }
+
+    const SaveIcon = () => {
+      if (!isMusic) {
+        return (<View></View>)
+    }
+    else {
+        return (
+        <View style={{flex: 1, flexDirection: 'row', alignContent: 'space-between', justifyContent: 'space-between',}}>
+          <View style={{flexDirection: 'column', alignSelf: 'center', flex: 7, justifyContent: 'center', alignItems: 'flex-start', alignContent: 'center'}}>
+            <View style={{flexDirection: 'column', alignSelf: 'center'}}>
+              <Text style={{alignContent: 'center', alignSelf: 'center'}}>{song}</Text>
+              <Text style={{alignContent: 'center', alignSelf: 'center'}}>{artist}</Text>
+            </View>
+            <View style={{flexDirection: 'row', alignSelf: 'center', justifyContent: 'space-between',}}>
+              <TouchableOpacity style={{alignSelf: 'center'}} onPress={()=>playSound()}><MaterialIcons name="play-arrow" color="black" size={32}/></TouchableOpacity>
+              <TouchableOpacity style={{alignSelf: 'center'}} onPress={()=>pauseSound()}><MaterialIcons name="pause" color="black" size={32}/></TouchableOpacity>
+            </View>
+          </View>
+          <View style={{marginRight: 15, justifyContent: 'center', bottom: 5, flex: 1,}}>
+            <TouchableOpacity onPress={()=>upload()}>
+              <MaterialIcons name="save-alt" color="black" size={32}/>
+            </TouchableOpacity>
+          </View>
+        </View>
+          )
+    }
+    }
+
     return (
         <View style={styles.container}>
             <View style={styles.header}>
-                <TouchableOpacity style={{left: 16, top: 10}} onPress={() => navigation.navigate("Tab")}>
+              <View style={{marginLeft: 15, top: 35,}}>
+                <TouchableOpacity onPress={() => navigation.replace("Tab")}>
                     <MaterialIcons name="home-filled" color="black" size={32}/>
                 </TouchableOpacity>
+              </View>
+              <SaveIcon />
             </View>
             <View style={styles.content}>
                 <Image source={{uri: image}} style={{width: 360, height: 492}}/>
@@ -48,10 +207,19 @@ const Gallery = () => {
                   <TouchableOpacity onPress={() => pickImage()}>
                       <MaterialIcons name="insert-photo" color="white" size={42}/>
                   </TouchableOpacity>
-                  <TouchableOpacity /*onPress={() => navigation.navigate("Tab")}*/>
+                  <TouchableOpacity onPress={() => {
+                    if (token != '') {
+                      searchMusic();
+                      setIsMusic(true);
+                    }
+                    else {
+                      promptAsync({useProxy: true});
+                      setIsMusic(true);
+                    }
+                  }}>
                       <Image style={{width: 102, height: 102}} source={require('./assets/img/camera.png')}/>
                   </TouchableOpacity>
-                  <TouchableOpacity /*onPress={() => navigation.navigate("Tab")}*/>
+                  <TouchableOpacity onPress={() => pickImage()}>
                       <MaterialIcons name="refresh" color="white" size={42}/>
                   </TouchableOpacity>
                 </View>
@@ -59,7 +227,9 @@ const Gallery = () => {
         </View>
     )
 };
+
 export default Gallery;
+
 const styles = StyleSheet.create({
     container: {
         flex: 1,
@@ -67,12 +237,17 @@ const styles = StyleSheet.create({
         position: 'relative',
     },
     header: {
-      width: 360,
-      height: 44,
-      top: 24,
+      flex: 1,
+      width: '100%',
+      height: 70,
+      top: 30,
       backgroundColor: 'white',
       left: 0,
       right: 0,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'baseline',
+      alignContent: 'stretch'
     },
     content: {
       position: "absolute",

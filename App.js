@@ -10,10 +10,27 @@
 // 2. Login 유지 - 앱 리로딩만 해도 로그인이 끊김
 // 3. Camera 문제 - 카메라에서 사진 선택 후 앱에 다시 들어올 때 리로딩되는 경우
 //    -> 처음 리로딩 문제는 해결, but 사진 재선택/갤러리로 이동하면 리로딩 발생
+//    -> No!!!! 다시 리로딩 문제....
 // 4. Gallery 분리 불가
 // - 갤러리 버튼 클릭 시 바로 사진 선택 후 다른 화면에 사진 출력 불가 (방법을 모름...)
 //   한 화면에 갤러리 버튼과 image가 동시에 존재해야 함
-//   -> 해결!!
+//    -> 해결!!
+// 5. Calendar에서 markedDates 클릭하면 데이터 나오도록 agenda 사용 실패...
+// 6. FlatList에 데이터 로딩할 때 where로 uid가 유저의 것인 데이터만 로딩해야 함 (해결!)
+//    + 같은 날짜에 사진이 여러 장일 경우 합칠 수 없음...(역시 Agenda 필요...)
+// 7. Gallery 페이지 전체...component rendering이랑 이벤트 타이밍 맞추기...
+
+// 앞으로 할 일!!
+// 1. 사진 firebase에 저장 (완)
+// 2. 캘린더에서 firebase에 사진 저장한 날, 이미지 받아와서 해당 일 마킹하고 누르면 사진 띄우기 (타협..)
+// 3. 음악 추천 재생 (음악을 하드코딩으로 넣어줌...추천 필요)
+// 4. 친구 목록 해결..(구현 못하면 그냥 지우기) -> timeline..
+// 5. 기타 스타일 손보기
+// 6. Calendar화면에서 하단 Flatlist에 음악 재생도 가능하게 하고 싶다....
+
+// REACT_APP_CLIENT_ID='6c24124e1da04448bf18452649da81fe'
+// REACT_APP_CLIENT_SECRET='ee6f3f6142304901acc551291588bf98'
+// https://auth.expo.io/@che122/paint_application
 
 import React from 'react';
 import { StyleSheet } from 'react-native';
@@ -25,11 +42,22 @@ import { MaterialIcons } from '@expo/vector-icons';
 import Home from './Home';
 import Login from './Login';
 import Paint from './Paint';
-import Friends from './Friends';
 import Setting from './Setting';
 import SignUp from './SignUp';
 import Camera from './Camera';
 import Gallery from './Gallery';
+import SpotifyWebApi from 'spotify-web-api-js';
+import Timelist from './Timelist';
+import UpdateProfile from './UpdateProfile'
+
+export const spotify = new SpotifyWebApi();
+
+// Endpoint
+export const discovery = {
+    authorizationEndpoint: 'https://accounts.spotify.com/authorize',
+    tokenEndpoint: 'https://accounts.spotify.com/api/token',
+  };
+
 
 const Stack = createStackNavigator();
 
@@ -41,7 +69,7 @@ function TabScreen() {
             return 
           }}), {headerShown: false}}>
 
-          <Tab.Screen name = "홈" component = {Home}
+          <Tab.Screen name = "Home" component = {Home}
           options={{ tabBarStyle: styles.bottomNav, tabBarLabelStyle: styles.bottomText,
             tabBarActiveTintColor: 'yellow', tabBarInactiveTintColor: 'white',
           tabBarIcon: ({color, size})=> ( <Ionicons name="home-sharp" color = {color} size={size}/>),}}/>
@@ -49,7 +77,7 @@ function TabScreen() {
           options={{ tabBarStyle: styles.bottomNav, tabBarLabelStyle: styles.bottomText,
             tabBarActiveTintColor: 'yellow', tabBarInactiveTintColor: 'white',
           tabBarIcon: ({color, size})=> ( <MaterialIcons name="format-paint" color = {color} size={size}/>),}}/>
-          <Tab.Screen name = "친구목록" component ={Friends}
+          <Tab.Screen name = "Timelist" component ={Timelist}
           options={{ tabBarStyle: styles.bottomNav, tabBarLabelStyle: styles.bottomText,
             tabBarActiveTintColor: 'yellow', tabBarInactiveTintColor: 'white',
           tabBarIcon: ({color, size})=> ( <Ionicons name="people-sharp" color = {color} size={size}/>),}}/>
@@ -72,6 +100,8 @@ function App() {
       <Stack.Screen name="SignUp" component={SignUp} />
       <Stack.Screen name="Camera" component={Camera} />
       <Stack.Screen name="Gallery" component={Gallery} />
+      <Stack.Screen name="Timelist" component={Timelist} />
+      <Stack.Screen name="Update" component={UpdateProfile} />
     </Stack.Navigator>
     </NavigationContainer>);
 }
@@ -84,7 +114,7 @@ const styles = StyleSheet.create({
     height: 80,
     left: 18,
     right: 18,
-    bottom: 50,
+    bottom: 20,
     backgroundColor: "#00A3FF",
     borderRadius: 20,
   },

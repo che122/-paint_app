@@ -88,8 +88,6 @@ const SignUp=()=>{
                     </View>
                 </View>
             </View>
-            {/*<View style={styles.eclipse}>
-            </View>*/}
         </KeyboardAvoidingView>
     )
 }; 
@@ -158,7 +156,6 @@ const styles=StyleSheet.create({
         height: 24,
     },
     text_style: {
-        fontFamily: 'GmarketSansTTFMedium',
         fontWeight: "700",
         fontSize: 11,
         lineHeight: 13,
@@ -192,7 +189,6 @@ const styles=StyleSheet.create({
         alignItems: 'center',
         width: 100,
         height: 12,
-        fontFamily: 'GmarketSansTTFMedium',
         fontWeight: "400",
         fontSize: 12,
         lineHeight: 12,
@@ -227,7 +223,6 @@ const styles=StyleSheet.create({
     signupText: {
         width: 133,
         height: 13,
-        fontFamily: "GmarketSansTTFMedium",
         fontWeight: "400",
         fontSize: 13,
         lineHeight: 13,

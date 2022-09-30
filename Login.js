@@ -13,7 +13,7 @@ const Login=()=>{
     
     const navigation = useNavigation()
     
-    useEffect(()=>{
+    /*useEffect(()=>{
         const unsubscribe = auth.onAuthStateChanged(user => {
             if(user){
                 navigation.replace("Tab")
@@ -22,6 +22,7 @@ const Login=()=>{
         })
         return unsubscribe
     },[])
+    */
 
     const handleLogin =()=>{
         auth
@@ -29,10 +30,11 @@ const Login=()=>{
         .then(userCredentials =>{
             const user=userCredentials.user;
             console.log('Logged in with ', user,email);
+            navigation.navigate("Tab");
         })
         .catch(error => alert(error.message))
 
-        //auth.setPersistence(auth, 'local')
+        //auth.setPersistence(auth, local)
         //firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
     }
     
@@ -93,7 +95,7 @@ const Login=()=>{
                     </Text>
                     <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
                         <Text style={{
-                            width: 48, height: 13, fontFamily: "GmarketSansTTFMedium", fontWeight: "400",
+                            width: 48, height: 13, fontWeight: "400",
                             fontSize: 13, lineHeight: 13, display: "flex", alignItems: "center",
                             textDecorationLine: "underline", color: "#00A3FF", flexGrow: 0
                         }}>회원가입</Text>
@@ -170,7 +172,6 @@ const styles=StyleSheet.create({
         height: 24,
     },
     text_style: {
-        fontFamily: 'GmarketSansTTFMedium',
         fontWeight: "700",
         fontSize: 11,
         lineHeight: 13,
@@ -204,7 +205,6 @@ const styles=StyleSheet.create({
         alignItems: 'center',
         width: 73,
         height: 12,
-        fontFamily: 'GmarketSansTTFMedium',
         fontWeight: "400",
         fontSize: 12,
         lineHeight: 12,
@@ -238,7 +238,6 @@ const styles=StyleSheet.create({
     signupText: {
         width: 133,
         height: 13,
-        fontFamily: "GmarketSansTTFMedium",
         fontWeight: "400",
         fontSize: 13,
         lineHeight: 13,
