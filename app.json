@@ -29,7 +29,7 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": [
+      "plugins": [
       [
         "expo-image-picker",
         {
