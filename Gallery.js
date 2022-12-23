@@ -17,13 +17,14 @@ import { Audio } from 'expo-av';
 const Gallery = () => {
   const navigation = useNavigation();
   const [image, setImage] = useState(null);
+  const [imgUrl, setImgUrl] = useState(null);
   const [isMusic, setIsMusic] = useState(false);
   const [song, setSong] = useState('');
   const [artist, setArtist] = useState('');
   const [albumImage, setAlbumImage] = useState('');
   const [previewUrl, setPreviewUrl] = useState('');
   const [token, setToken] = useState('');
-  const searchTag = ['spring', 'love', 'tired', 'happy', 'cloud', 'sunny'];
+  const searchTag = ['winter', 'love', 'tired', 'happy', 'cloud', 'sunny'];
   const sound = new Audio.Sound();
 
   const [request, response, promptAsync] = useAuthRequest(
@@ -42,7 +43,51 @@ const Gallery = () => {
 );
 
 const searchMusic = async () => {
-  spotify.searchTracks(searchTag[1], {limit: 1, offset: 10})
+
+  try {
+    let date = new Date();
+    let getTime = date.getTime();
+    console.log(imgUrl);
+
+    const res = await fetch(image);
+    const blob = await res.blob();
+    setImgUrl(await imageUpload(blob, getTime));
+
+    let body = JSON.stringify({
+      requests: [
+        {
+          features: [
+            { type: 'LABEL_DETECTION', maxResults: 10 },
+            { type: 'FACE_DETECTION', maxResults: 5 },
+          ],
+          image: {
+            source: {
+              imageUri: imgUrl
+            }
+          }
+        }
+      ]
+    });
+    let response = await fetch(
+      'https://vision.googleapis.com/v1/images:annotate?key=' +
+        'AIzaSyA9Fn00e7yx7emzDzfD5hd4pahZOJ5lfGI',
+      {
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json'
+        },
+        method: 'POST',
+        body: body
+      }
+    );
+    let responseJson = await response.json();
+    console.log(responseJson);
+  } catch (error) {
+    console.log(error);
+  }
+
+
+  spotify.searchTracks(searchTag[0], {limit: 1, offset: 10})
   .then(
       function (data) {
         setSong(data.tracks.items[0].name);
@@ -75,7 +120,7 @@ const searchMusic = async () => {
     const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
 
     if (permissionResult.granted === false) {
-      alert("You've refused to allow this appp to access your photos!");
+      alert("You've refused to allow this app to access your photos!");
       return;
     }
 
@@ -96,6 +141,7 @@ const searchMusic = async () => {
       const storageRef = ref(storage, 'image/' + date)
       const snapshot = await uploadBytes(storageRef, blob);
       const imageUrl = await getDownloadURL(storageRef);
+
       blob.close();
 
       return imageUrl;
@@ -117,9 +163,11 @@ const searchMusic = async () => {
           Alert.alert('이미지를 등록해주세요');
           return;
         }
+
         const currentUser = getAuth().currentUser;
         let date = new Date();
         let getTime = date.getTime();
+
         let data = {
           image: image,
           date: format(date, 'yyyy-MM-dd'),
@@ -130,15 +178,13 @@ const searchMusic = async () => {
           songArtist: artist,
           songPreview: previewUrl,
         };
-        const response = await fetch(image);
-        const blob = await response.blob();
-        const imageUrl = await imageUpload(blob, getTime);
-        data.image = imageUrl;
+        
+        data.image = imgUrl;
         console.log(data);
         let result = addImage(data);
         if (result) {
           Alert.alert('사진이 성공적으로 저장되었습니다!');
-          navigation.replace("Tab");
+          navigation.navigate("Tab");
         }
     };
 
